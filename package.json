@@ -1,5 +1,5 @@
 {
-  "name": "node-ws-test",
+  "name": "sharescreen",
   "version": "0.0.1",
   "repository": {
     "type": "git",
@@ -13,6 +13,6 @@
     "node": "0.10.x"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node server.js"
   }
 }
