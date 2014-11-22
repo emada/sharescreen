@@ -1,34 +1,41 @@
 <html>
-  <head>
-    <style>
-      body {
-        font-family: "Helvetica Neue", helvetica, arial;
-        padding: 15px;
-      }
 
-      ul {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
+<script type="text/javascript">
 
-      ul li {
-        line-height: 1.4;
-      }
-    </style>
+function detectBrowser()
+{
+	/*
+    var fallback = true;
+    
+    if (navigator && navigator.vendor) {
+        if (navigator.vendor.search("Apple") != -1) {
+            var vers = parseInt(navigator.appVersion.replace(/^.*?AppleWebKit\/(\d+).*?$/,'$1'),0);
+                if (vers >= 532) {
+                    fallback = false;
+                }
+        }
+    }
+    
+    var slashIndex = window.location.href.lastIndexOf("/");
+    var cropped = window.location.href.slice(0,slashIndex+1);
+    
+    if (fallback) {
+        window.location.replace( cropped + "assets/fallback/index.html" );
+    }
+    else {
+        window.location.replace( cropped + "assets/player/KeynoteDHTMLPlayer.html" );
+    }
+    */
+    var slashIndex = window.location.href.lastIndexOf("/");
+    var cropped = window.location.href.slice(0,slashIndex+1);
+    
+    window.location.replace(cropped + "assets/player/KeynoteDHTMLPlayer.html");
 
-    <script>
-      var host = location.origin.replace(/^http/, 'ws')
-      var ws = new WebSocket(host);
-      ws.onmessage = function (event) {
-        var li = document.createElement('li');
-        li.innerHTML = JSON.parse(event.data);
-        document.querySelector('#pings').appendChild(li);
-      };
-    </script>
-  </head>
-  <body>
-    <h1>Pings</h1>
-    <ul id='pings'></ul>
-  </body>
+}
+
+</script>
+
+<body bgcolor="black" onload="detectBrowser()">
+</body>
+
 </html>
