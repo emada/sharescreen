@@ -1,0 +1,22 @@
+{
+  "name": "Share Screen",
+  "manifest_version": 2,
+  "version": "0.0.1",
+  "description": "Share control of any web page with friends.",
+
+  "web_accessible_resources": [ "resources/*" ],
+
+  "content_scripts": [
+    {
+    "all_frames": false,
+    "matches": ["<all_urls>"],
+    "exclude_matches": [],
+    "js": [
+      "jquery.js", "contentscript.js"
+    ]
+    }
+  ]
+
+}
+
+
