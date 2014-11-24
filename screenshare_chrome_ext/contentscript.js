@@ -1,5 +1,5 @@
-// var url = "ws://localhost:8001";
-var url = "ws://floating-ocean-5528.herokuapp.com";
+var url = "ws://localhost:8001";
+// var url = "ws://floating-ocean-5528.herokuapp.com";
 var ws = null;
 var already_loaded = false;
 var nickname = '';
