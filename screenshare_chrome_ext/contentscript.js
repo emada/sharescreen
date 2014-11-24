@@ -9,8 +9,10 @@ var connected = false;
 var listening_to_actions = false;
 var mouse_position = '';
 var last_mouse_position = '';
+var current_slide = '';
 
 $(document).ready(function() {
+  prepare_communication_with_page();
   WebSocketClient.init();
 });
 
@@ -27,23 +29,52 @@ new function() {
   var disconnectButton; 
   var sendButton;
 
+
   // Insert command bar on top of the page
   var cursor_img = chrome.extension.getURL("resources/cursor_pointer.png");
-  $('body').prepend('<div>   <label>User name:</label>   <input type="text" id="nickname" autocomplete="on" value=""/>   <button id="connectButton">Open</button>   <button id="disconnectButton" style="display: none;">Close</button>   <label>Status:</label>   <span id="connectionStatus">CLOSED</span> </div>');
+  // $('body').prepend('<div>   <label>User name:</label>   <input type="text" id="nickname" autocomplete="on" value=""/>   <button id="connectButton">Open</button>   <button id="disconnectButton" style="display: none;">Close</button>   <label>Status:</label>   <span id="connectionStatus">CLOSED</span> </div>');
+  // $('body').prepend('<div style="position:absolute; left:31%">   <button id="previous_slide">Previous</button>   <input type="text" id="current_slide" value="1"/>   <button id="next_slide">Next</button>  <label>User name:</label>   <input type="text" id="nickname" autocomplete="on" value=""/>   <button id="connectButton">Open</button>   <button id="disconnectButton" style="display: none;">Close</button>   <label>Status:</label>   <span id="connectionStatus">CLOSED</span> </div>');
+  // $('body').prepend('<div style="position:absolute; left:31%">   <button id="previous_slide">Previous</button>     <button id="next_slide">Next</button>  <label>User name:</label>   <input type="text" id="nickname" autocomplete="on" value=""/>   <button id="connectButton">Open</button>   <button id="disconnectButton" style="display: none;">Close</button>   <label>Status:</label>   <span id="connectionStatus">CLOSED</span> </div>');
+  $('body').prepend('<div style="position:absolute; left:39%">   <button id="connectButton" style="margin-right:120px;">Connect</button>   <button id="disconnectButton" style="display: none;margin-right:105px;">Disconnect</button>   <button id="previous_slide">Previous</button>     <button id="next_slide">Next</button>   </div>');
   $('body').append('<img style="pointer-events: none; z-index: 9999" id="pointer_ema" width="15px" src="' + cursor_img + '"/> ');
   $('#pointer_ema').hide();
 
+  
+  function correct_position_slides() {
+    $('#stageArea').css('top', 20);
+  }
+  window.setInterval(correct_position_slides, 500);
+
+
+  function jump_num_slides(num_slides) {
+    command_to_page = 'gShowController.currentSlideIndex';
+    eval_on_page_data(command_to_page, function(current_slide) {
+      slide_to_go = current_slide + num_slides + 1;
+      goto_slide = 'location.href="javascript:gShowController.jumpToSlide(' + slide_to_go + '); void 0";'
+      eval(goto_slide);
+
+      if (connected) {
+        msg = create_message('call_function', goto_slide);
+        console.log(msg.value);
+        ws.send(msg);
+      }
+    });
+    return false;    
+  }
+
+  $('#previous_slide').on('click', function() {
+    jump_num_slides(-1);
+    return false;
+  });
+
+  $('#next_slide').on('click', function() {
+    jump_num_slides(1);
+    return false;
+  });
+
 
   var open = function() {
-    // try {
       ws = new WebSocket(url);
-    // }
-    // catch(err) {
-      // console.log(err);
-      // ws = null;
-    // }
-
-    // if (ws) {
       ws.onopen = onOpen;
       ws.onclose = onClose;
       ws.onmessage = onMessage;
@@ -53,7 +84,6 @@ new function() {
       serverUrl.attr('disabled', 'disabled');
       connectButton.hide();
       disconnectButton.show();
-    // }
   }
   
   var close = function() {
@@ -112,7 +142,6 @@ new function() {
   };
   
   var onError = function(event) {
-    // alert(event.data);
     alert('Could not connect to the server! Aborting!');
     close();
   }
@@ -146,10 +175,12 @@ new function() {
       connectButton.click(function(e) {
         close();
         open();
+        return false;
       });
     
       disconnectButton.click(function(e) {
         close();
+        return false;
       });
       
       sendButton.click(function(e) {
@@ -223,7 +254,7 @@ function stop_listen_to_actions() {
   window.clearTimeout(send_mouse_position_timer_ID);
   $(document).off('keydown.share_screen_namespace');
   $(document).off('keyup.share_screen_namespace');
-  // $(document).off('mousewheel.share_screen_namespace DOMMouseScroll.share_screen_namespace');
+  $(document).off('mousewheel.share_screen_namespace DOMMouseScroll.share_screen_namespace');
   $(document).off('click.share_screen_namespace');
 }
 
@@ -242,9 +273,8 @@ function start_listen_to_actions() {
       ws.send(msg);
       last_mouse_position = mouse_position;
     }
-    send_mouse_position_timer_ID = window.setTimeout(send_mouse_position, 100);
   }
-  send_mouse_position();
+  send_mouse_position_timer_ID = window.setInterval(send_mouse_position, 100);
 
   $(document).on('keydown.share_screen_namespace', function(event) {
     if ($(':focus') && $(':focus').val()) {
@@ -359,3 +389,52 @@ function create_message(type_val, value_val) {
   msg = {type: type_val, value: value_val, id: unique_id};
   return JSON.stringify(msg);
 }
+
+
+
+// 
+// Comunication between page and content script variables and functions
+// 
+
+function prepare_communication_with_page() {
+  // Prepare page environment to the communication
+  location.href = "javascript:   " +
+  "  window.addEventListener('message', function(event) {" +
+  "    if (event.source != window) {" +
+  "      return;" +
+  "    }" +
+  "    msg = event.data;" +
+  "    if (msg.origin && (msg.origin == 'FROM_CONTENTSCRIPT')) {" +
+  "      rs = eval(msg.value);" +
+  "      msg = {" +
+  "        origin: 'FROM_PAGE'," +
+  "        value: rs" +
+  "      };" +
+  "      event.source.postMessage(msg, '*');" +
+  "    }" +
+  "  }, false); // ; void 0" +
+  ";  "
+}
+
+// Send a command to the page environment and run locally a function on the result
+function eval_on_page_data(command_to_page, command_local) {
+  // Wait for the results and run a function locally
+  var wait_response = function(param) {
+    // Accept only messages from the window
+    if (event.source != window)
+      return;
+
+    if (event.data.origin && (event.data.origin == "FROM_PAGE")) {
+      // console.log("Contentscript received: " + event.data.value);
+      command_local(event.data.value);
+      window.removeEventListener("message", wait_response, false)
+    }
+  }
+
+  window.addEventListener("message", wait_response, false)
+
+  // Send command to be run at the page enviroment
+  msg = {origin:'FROM_CONTENTSCRIPT', value:command_to_page};
+  window.parent.postMessage(msg, "*");
+}
+
