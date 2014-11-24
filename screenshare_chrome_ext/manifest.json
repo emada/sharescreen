@@ -9,7 +9,7 @@
   "content_scripts": [
     {
     "all_frames": false,
-    "matches": ["<all_urls>"],
+    "matches": ["http://floating-ocean-5528.herokuapp.com/*", "file://*"],
     "exclude_matches": [],
     "js": [
       "jquery.js", "contentscript.js"

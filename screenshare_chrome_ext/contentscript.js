@@ -1,5 +1,5 @@
-var url = "ws://localhost:8001";
-// var url = "ws://floating-ocean-5528.herokuapp.com";
+// var url = "ws://localhost:8001";
+var url = "ws://floating-ocean-5528.herokuapp.com";
 var ws = null;
 var already_loaded = false;
 var nickname = '';
@@ -10,6 +10,8 @@ var listening_to_actions = false;
 var mouse_position = '';
 var last_mouse_position = '';
 var current_slide = '';
+var connect_trials = 0;
+var max_connect_trials = 500;
 
 $(document).ready(function() {
   prepare_communication_with_page();
@@ -17,9 +19,6 @@ $(document).ready(function() {
 });
 
 new function() {
-  // var ws = null;
-  // var connected = false;
-
   var nickname;
   var serverUrl;
   var connectionStatus;
@@ -74,20 +73,20 @@ new function() {
 
 
   var open = function() {
-      ws = new WebSocket(url);
-      ws.onopen = onOpen;
-      ws.onclose = onClose;
-      ws.onmessage = onMessage;
-      ws.onerror = onError;
+    ws = new WebSocket(url);
+    ws.onopen = onOpen;
+    ws.onclose = onClose;
+    ws.onmessage = onMessage;
+    ws.onerror = onError;
 
-      connectionStatus.text('OPENING ...');
-      serverUrl.attr('disabled', 'disabled');
-      connectButton.hide();
-      disconnectButton.show();
+    connectionStatus.text('OPENING ...');
+    serverUrl.attr('disabled', 'disabled');
+    connectButton.hide();
+    disconnectButton.show();
   }
   
   var close = function() {
-    if (ws) {
+    if (ws && (ws == WebSocket.CONNECTING || ws == WebSocket.OPEN || WebSocket.CLOSING)) {
       console.log('CLOSING ...');
       ws.close();
       $('#pointer_ema').hide();
@@ -121,14 +120,19 @@ new function() {
     ws.send(msg);
 
     start_listen_to_actions();
+    connect_trials = 0;
   };
   
   var onClose = function() {
-    console.log('CLOSED: ' + serverUrl.val());
-    ws = null;
-    // stop_listen_to_actions();
-    // $('#pointer_ema').hide();
-    close();
+    console.log('CLOSED: ' + url);
+    if (connect_trials < max_connect_trials) {
+      ++connect_trials;
+      console.log('Trying to connect: ' + connect_trials);
+      open();
+    } else {
+      ws = null;
+      close();
+    }
   };
   
   var onMessage = function(event) {
@@ -173,7 +177,7 @@ new function() {
       sendButton = $('#sendButton');
       
       connectButton.click(function(e) {
-        close();
+        connect_trials = 0;
         open();
         return false;
       });
